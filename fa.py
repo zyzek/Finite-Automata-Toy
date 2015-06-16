@@ -1,10 +1,7 @@
 #!/usr/bin/env python
-from __future__ import (nested_scopes, generators, division, absolute_import,
-            with_statement, print_function, unicode_literals)
-
 import sys, io, re, math, random
 from collections import deque
-from Tkinter import Tk, Frame, Button, Checkbutton, Scale, Entry, BOTH, Canvas
+from tkinter import Tk, Frame, Button, Checkbutton, Scale, Entry, BOTH, Canvas
 
 
 ###    DFA STUFF    ##########################################################
@@ -406,7 +403,7 @@ class DFA(object):
 def parseDFA(d):
     """ Takes the description of a DFA, as a string, d. Returns the corresponding DFA object."""
 
-    buf = io.StringIO(unicode(d))
+    buf = io.StringIO(d)
 
     stateNames = [s.strip() for s in buf.readline().split(",")]
     alphabet = [s.strip() for s in buf.readline().split(",")]
@@ -617,7 +614,7 @@ class NFA(object):
 def parseNFA(n):
     """ Takes the description of an NFA, as a string, n. Returns a corresponding DFA."""
 
-    buf = io.StringIO(unicode(n))
+    buf = io.StringIO(n)
 
     stateNames = [s.strip() for s in buf.readline().split(",")]
     alphabet = [s.strip() for s in buf.readline().split(",")]
@@ -1021,7 +1018,7 @@ def findAcceptedString(machine):
 def loadFA(filename):
     """ Given a filename, returns the machine described in that file. """
     with open(filename, 'r') as f:
-        s = unicode(f.read())
+        s = f.read()
         if "{" in s:
             return parseNFA(s).toDFA().minimised()
         else:
@@ -1478,7 +1475,7 @@ class FAContext(Frame):
         """ Replaces the currently-active machine with one defined in filename, if it is valid. """
         try:
             with open(filename, 'r') as f:
-                s = unicode(f.read())
+                s = f.read()
                 if "{" in s:
                     self.machine = parseNFA(s).toDFA().minimised()
                 else:
