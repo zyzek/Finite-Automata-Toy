@@ -13,20 +13,20 @@ class State(object):
             accepting:   a boolean, whether the state accepts or not;
         transitions: a map from alphabet symbols to the names of states. """
 
-    # We allow stateNames not to be provided in order to facilitate the
+    # We allow state_names not to be provided in order to facilitate the
     # iterative construction of a machine where the final set of states is not
     # known until we are done building states
-    def __init__(self, name, accepting, transitions, alphabet, stateNames=None):
+    def __init__(self, name, accepting, transitions, alphabet, state_names=None):
         self.name = name
         self.accepting = accepting
 
         # Require this to be a state of a DFA, in particular.
         if sorted(alphabet) != sorted(transitions.keys()):
             raise ValueError("Each state of a DFA requires exactly one transition for each symbol in the alphabet.")
-        if stateNames is not None:
-            for stateName in transitions.values():
-                if stateName not in stateNames:
-                    raise ValueError("Transition to state \"" + stateName + "\" not in machine.")
+        if state_names is not None:
+            for state_name in transitions.values():
+                if state_name not in state_names:
+                    raise ValueError("Transition to state \"" + state_name + "\" not in machine.")
         self.transitions = transitions
 
     def transition(self, symbol):
@@ -57,24 +57,24 @@ class DFA(object):
     """ A DFA.
         Members:
             states:     a map from state names to State objects;
-            startName:  the name of the start state;
+            start_name:  the name of the start state;
             alphabet:   a list of the strings which compose the alphabet. Symbols can be multiple characters long. """
 
-    def __init__(self, states, startName, alphabet):
+    def __init__(self, states, start_name, alphabet):
         self.states = states
         self.alphabet = alphabet
 
-        if startName not in states:
-            raise ValueError("Start state \"" + startName + "\" is not a state of the machine.")
-        self.startName = startName
+        if start_name not in states:
+            raise ValueError("Start state \"" + start_name + "\" is not a state of the machine.")
+        self.start_name = start_name
 
-    def checkString(self, s, verbose=True):
+    def check_string(self, s, verbose=True):
         """ Run this DFA on the given string. Returns true if the string is accepted, false otherwise.
             Parameters:
                 s:          the string to process;
                 verbose:    if True, an execution trace is printed; if False, the result is returned silently. """
 
-        current = self.states[self.startName]
+        current = self.states[self.start_name]
 
         # Verbose is the same as non-verbose, save for printing the trace.
         # For each character in the input string, follow the appropriate transition until string exhausted.
@@ -88,14 +88,14 @@ class DFA(object):
         else:
             # length of symbol and state names for formatting purposes.
 
-            maxStN = max([len(state) for state in self.states])
-            maxSyN = 0
+            max_st = max([len(state) for state in self.states])
+            max_sy = 0
             if len(self.alphabet) != 0:
-                maxSyN = max([len(c) for c in self.alphabet])
+                max_sy = max([len(c) for c in self.alphabet])
 
             for i in range(len(s)):
-                print(s[:i] + " "*(len(s) - i + 2) + current.name + " "*(maxStN - len(current.name)), end="")
-                print(" -- " + s[i] + " "*(maxSyN - len(s[i])) + " --> ", end="")
+                print(s[:i] + " "*(len(s) - i + 2) + current.name + " "*(max_st - len(current.name)), end="")
+                print(" -- " + s[i] + " "*(max_sy - len(s[i])) + " --> ", end="")
 
                 # If a character not in the alphabet is tried, transition to an inescapable error state
                 # which self-loops on all input.
@@ -104,7 +104,7 @@ class DFA(object):
                 except ValueError:
                     current = self.error()
 
-                print(" "*(maxStN - len(current.name)) + current.name + "   " + s[i+1:])
+                print(" "*(max_st - len(current.name)) + current.name + "   " + s[i+1:])
 
             print("accepted") if current.accepting else print("rejected")
 
@@ -122,7 +122,7 @@ class DFA(object):
         return e
 
     def copy(self):
-        return DFA({name: self.states[name].copy() for name in self.states.keys()}, self.startName, list(self.alphabet))
+        return DFA({name: self.states[name].copy() for name in self.states.keys()}, self.start_name, list(self.alphabet))
 
     def description(self):
         """ Returns a description of this DFA in the format specified in the assignment specification. """
@@ -133,7 +133,7 @@ class DFA(object):
 
         description.write(",".join(names) + '\n')
         description.write(",".join(alphabet) + '\n')
-        description.write(self.startName + '\n')
+        description.write(self.start_name + '\n')
         description.write(",".join([n for n in names if self.states[n].accepting])  + '\n')
 
         for n in names:
@@ -147,22 +147,22 @@ class DFA(object):
     def describe(self):
         print(self.description(), end="")
 
-    def startTransClosure(self):
+    def start_trans_closure(self):
         """ Returns a list of all states reachable by transitions from the start state in BFS order. """
-        reachableStates = []
-        toProcess = deque([self.startName])
+        reachables = []
+        to_process = deque([self.start_name])
 
-        while len(toProcess) != 0:
-            current = toProcess.popleft()
-            reachableStates.append(current)
+        while len(to_process) != 0:
+            current = to_process.popleft()
+            reachables.append(current)
 
             for name in self.states[current].transitions.values():
-                if not (name in reachableStates or name in toProcess):
-                    toProcess.append(name)
+                if not (name in reachables or name in to_process):
+                    to_process.append(name)
 
-        return reachableStates
+        return reachables
 
-    def immStateEquivalence(self, sName1, sName2):
+    def imm_state_equiv(self, sName1, sName2):
         """ Returns the immediate equivalence of two states.
             Two states are distinct if their accept statuses differ.
             If they share accept status, but their transitions differ, we draw no conclusion
@@ -185,32 +185,32 @@ class DFA(object):
         machine = self.copy()
 
         if debug:
-            machine.renameStates()
+            machine.rename_states()
 
         # First remove any orphaned subgraphs. Handles some cases the table-filling algorithm misses.
-        reachables = machine.startTransClosure()
-        stateNames = list(machine.states.keys())
-        for name in stateNames:
+        reachables = machine.start_trans_closure()
+        state_names = list(machine.states.keys())
+        for name in state_names:
             if name not in reachables:
                 del machine.states[name]
 
 
         #Use the table-filling algorithm to determine equivalence classes.
-        stateNames = list(machine.states.keys())
-        equivalences = {stateNames[i]: {stateNames[i]: -1 for i in range(len(stateNames))} for i in range(len(stateNames))}
+        state_names = list(machine.states.keys())
+        equivalences = {state_names[i]: {state_names[i]: -1 for i in range(len(state_names))} for i in range(len(state_names))}
 
         # Accepting/non-accepting distinction:
-        for state1 in stateNames:
-            for state2 in stateNames:
-                equivalences[state1][state2] = equivalences[state2][state1] = machine.immStateEquivalence(state1, state2)
+        for state1 in state_names:
+            for state2 in state_names:
+                equivalences[state1][state2] = equivalences[state2][state1] = machine.imm_state_equiv(state1, state2)
 
         # Determine all inequivalences
-        newResults = True
-        while newResults:
-            newResults = False
+        new_results = True
+        while new_results:
+            new_results = False
 
-            for state1 in stateNames:
-                for state2 in stateNames:
+            for state1 in state_names:
+                for state2 in state_names:
                     if state1 == state2:
                         continue
 
@@ -223,60 +223,60 @@ class DFA(object):
                         for letter in machine.alphabet:
                             if equivalences[machine.states[state1].transition(letter)][machine.states[state2].transition(letter)] == False:
                                 equivalences[state1][state2] = equivalences[state2][state1] = False
-                                newResults = True
+                                new_results = True
                                 continue
                     # If certain states are equivalent, they must share equivalence relations with all other states.
                     elif equivalence == True:
-                        for name in stateNames:
+                        for name in state_names:
                             if equivalences[state1][name] != equivalences[state2][name]:
-                                newResults = True
+                                new_results = True
                                 if equivalences[state1][name] == -1:
                                     equivalences[state1][name] = equivalences[state2][name]
                                 else:
                                     equivalences[state2][name] = equivalences[state1][name]
 
         # Anything left is an equivalence.
-        for state1 in stateNames:
-            for state2 in stateNames:
+        for state1 in state_names:
+            for state2 in state_names:
                 if equivalences[state1][state2] == -1:
                     equivalences[state1][state2] = True
 
         # Build a list of equivalence classes, for easier processing.
-        eqClasses = []
-        for state in stateNames:
+        eq_classes = []
+        for state in state_names:
             redundant = False
-            for eqClass in eqClasses:
-                if state in eqClass:
+            for eq_class in eq_classes:
+                if state in eq_class:
                     redundant = True
                     break
             if redundant:
                 continue
 
-            eqClass = []
+            eq_class = []
             for k, v in equivalences[state].items():
                 if v:
-                    eqClass.append(k)
-            eqClasses.append(sorted(eqClass))
+                    eq_class.append(k)
+            eq_classes.append(sorted(eq_class))
 
         # Consolidate the DFA
 
         # Redirect the start state
-        for eqClass in eqClasses:
-            if machine.startName in eqClass:
-                machine.startName = eqClass[0]
+        for eq_class in eq_classes:
+            if machine.start_name in eq_class:
+                machine.start_name = eq_class[0]
 
         # Remove redundant states from the machine
-        for eqClass in eqClasses:
-            if len(eqClass) > 1:
-                for name in eqClass[1:]:
+        for eq_class in eq_classes:
+            if len(eq_class) > 1:
+                for name in eq_class[1:]:
                     del machine.states[name]
 
         # Redirect transitions to redundant states
         for state in machine.states.values():
             for k, v in state.transitions.items():
-                for eqClass in eqClasses:
-                    if v in eqClass:
-                        state.transitions[k] = eqClass[0]
+                for eq_class in eq_classes:
+                    if v in eq_class:
+                        state.transitions[k] = eq_class[0]
 
         # Table-filling algorithm debug output.
         if debug:
@@ -293,7 +293,7 @@ class DFA(object):
                     else: print("_", end=" ")
                 print()
 
-            print(eqClasses)
+            print(eq_classes)
 
             print(machine.states.keys())
             for state in machine.states.values():
@@ -301,10 +301,10 @@ class DFA(object):
 
         return machine
 
-    def toNFA(self):
+    def nfa(self):
         """ Return an equivalent NFA-representation of this machine. """
         alphabet = list(self.alphabet)
-        startName = self.startName
+        start_name = self.start_name
 
         states = {}
         for name, state in self.states.items():
@@ -312,29 +312,29 @@ class DFA(object):
             transitions[NFAState.epsilon] = []
             states[name] = NFAState(state.name, state.accepting, transitions, alphabet)
 
-        return NFA(states, startName, alphabet)
+        return NFA(states, start_name, alphabet)
 
-    def renameStates(self):
+    def rename_states(self):
         """ Rename all the states of this machine. Substitute: capital letter strings.
             The start state is labeled A, its children are labelled from B onwards, etc: BFS ordering. """
 
         # Determine the order in which to rename states.
-        order = self.startTransClosure()
+        order = self.start_trans_closure()
         for state in self.states:
             if state not in order:
                 order.append(state)
 
         # old names -> new names
-        mapping = dict(zip(order, letterRange(len(order))))
+        mapping = dict(zip(order, letter_range(len(order))))
 
-        self.startName = mapping[self.startName]
+        self.start_name = mapping[self.start_name]
 
-        newStates = {}
+        new_states = {}
 
         for name in self.states:
-            newStates[mapping[name]] = self.states[name]
+            new_states[mapping[name]] = self.states[name]
 
-        self.states = newStates
+        self.states = new_states
 
         # Now that states have been remapped in the machine, also switch all transitions.
         for name, state in self.states.items():
@@ -342,7 +342,7 @@ class DFA(object):
             for symbol, destination in state.transitions.items():
                 state.transitions[symbol] = mapping[destination]
 
-    def shortestPath(self, orig, dest):
+    def shortest_path(self, orig, dest):
         """ Returns a string that represents a shortest path between two nodes. """
 
         if orig == dest:
@@ -382,36 +382,36 @@ class DFA(object):
 
         return path
 
-    def removestate(self, stateName):
+    def remove_state(self, state_name):
         """ Removes a state of this DFA: broken transitions become self-loops."""
 
         # If we remove the start state, DFA accepts the empty language.
-        if stateName == self.startName:
-            newStart = State("empty", False, {symbol: "empty" for symbol in self.alphabet}, self.alphabet)
-            self.startName = "empty"
-            self.states = {"empty": newStart}
+        if state_name == self.start_name:
+            new_start = State("empty", False, {symbol: "empty" for symbol in self.alphabet}, self.alphabet)
+            self.start_name = "empty"
+            self.states = {"empty": new_start}
             return
 
-        del self.states[stateName]
+        del self.states[state_name]
 
         for state in self.states.values():
             for symbol, dest in state.transitions.items():
-                if stateName == dest:
+                if state_name == dest:
                     state.transitions[symbol] = state.name
 
 
-def parseDFA(d):
+def parse_dfa(d):
     """ Takes the description of a DFA, as a string, d. Returns the corresponding DFA object."""
 
     buf = io.StringIO(d)
 
-    stateNames = [s.strip() for s in buf.readline().split(",")]
+    state_names = [s.strip() for s in buf.readline().split(",")]
     alphabet = [s.strip() for s in buf.readline().split(",")]
-    startName = buf.readline().strip()
-    acceptStates = [s.strip() for s in buf.readline().split(",")]
+    start_name = buf.readline().strip()
+    accept_states = [s.strip() for s in buf.readline().split(",")]
 
     if alphabet == ['']: alphabet = []
-    if acceptStates == ['']: acceptStates = []
+    if accept_states == ['']: accept_states = []
 
     transitions = []
     for line in buf:
@@ -419,12 +419,12 @@ def parseDFA(d):
 
     buf.close()
 
-    if len(stateNames) == 0 or stateNames == ['']:
+    if len(state_names) == 0 or state_names == ['']:
         raise ValueError("At least one state required.")
 
-    states = {stateNames[i]: State(stateNames[i], stateNames[i] in acceptStates, dict(zip(alphabet, transitions[i])), alphabet, stateNames) for i in range(len(stateNames))}
+    states = {state_names[i]: State(state_names[i], state_names[i] in accept_states, dict(zip(alphabet, transitions[i])), alphabet, state_names) for i in range(len(state_names))}
 
-    return DFA(states, startName, alphabet)
+    return DFA(states, start_name, alphabet)
 
 
 
@@ -439,17 +439,17 @@ class NFAState(object):
 
     epsilon = ""
 
-    def __init__(self, name, accepting, transitions, alphabet, stateNames=None):
+    def __init__(self, name, accepting, transitions, alphabet, state_names=None):
         self.name = name
         self.accepting = accepting
 
         # Require this to be a state of an NFA, in particular.
         if sorted(alphabet + [NFAState.epsilon]) != sorted(transitions.keys()):
             raise ValueError("State should contain exactly one (possibly empty) transition for each symbol in the alphabet, plus epsilon.")
-        if stateNames is not None:
-            for stateName in [item for sublist in transitions.values() for item in sublist]:
-                if stateName not in stateNames:
-                    raise ValueError("Transition to state \"" + stateName + "\" not in machine.")
+        if state_names is not None:
+            for state_name in [item for sublist in transitions.values() for item in sublist]:
+                if state_name not in state_names:
+                    raise ValueError("Transition to state \"" + state_name + "\" not in machine.")
 
         self.transitions = transitions
 
@@ -461,96 +461,96 @@ class NFAState(object):
 class NFA(object):
     """ Represents an NFA. To run it, convert to a DFA first. """
 
-    def __init__(self, states, startName, alphabet):
+    def __init__(self, states, start_name, alphabet):
         self.states = states
         self.alphabet = alphabet
 
-        if startName not in states:
-            raise ValueError("Start state \"" + startName + "\" is not a state of the machine.")
-        self.startName = startName
+        if start_name not in states:
+            raise ValueError("Start state \"" + start_name + "\" is not a state of the machine.")
+        self.start_name = start_name
 
-    def epsilonClosure(self, initStateNames):
+    def epsilon_closure(self, state_names):
         """ Given a set of NFA states, return the names of all states reachable by zero or more epsilon-transitions. """
 
         closure = []
-        toProcess = list(initStateNames)
+        to_process = list(state_names)
 
-        while len(toProcess) != 0:
-            current = toProcess.pop()
+        while len(to_process) != 0:
+            current = to_process.pop()
             if current not in closure:
                 closure.append(current)
 
                 for trans in self.states[current].transitions[NFAState.epsilon]:
-                    if trans not in toProcess:
-                        toProcess.append(trans)
+                    if trans not in to_process:
+                        to_process.append(trans)
 
         # Returns the sorted list so stuff can be compared easily later without resorting.
         return sorted(closure)
 
-    def nextNFAStates(self, presentStateNames, symbol):
+    def next_nfa_states(self, start_names, symbol):
         """ Given a set of states of the NFA, return all possible destinations after processing a given symbol. """
 
-        destStateNames = []
+        dest_names = []
 
-        for name in self.epsilonClosure(presentStateNames):
+        for name in self.epsilon_closure(start_names):
             for dest in self.states[name].transitions[symbol]:
-                if dest not in destStateNames:
-                    destStateNames.append(dest)
+                if dest not in dest_names:
+                    dest_names.append(dest)
 
-        return self.epsilonClosure(destStateNames)
+        return self.epsilon_closure(dest_names)
 
-    def toDFA(self):
+    def dfa(self):
         """ Return a DFA equivalent to this machine. """
 
         # map, names -> states, to be passed to the DFA State constructor
-        DFAStates = {}
+        dfa_states = {}
 
         # map, DFA State names -> sets of NFA state names; for tracking the names of states we have already met
-        transitionSets = {}
+        transition_sets = {}
 
-        # NFA state sets yet to be processed into the TransitionSets map
-        toProcess = []
+        # NFA state sets yet to be processed into the transition_sets map
+        to_process = []
 
         # Add the start state
-        toProcess.append(self.epsilonClosure([self.startName]))
-        startName = candidateName("".join(toProcess[0]), transitionSets)
+        to_process.append(self.epsilon_closure([self.start_name]))
+        start_name = new_name("".join(to_process[0]), transition_sets)
 
-        while len(toProcess) != 0:
-            currentState = toProcess.pop()
-            if currentState in transitionSets.values():
+        while len(to_process) != 0:
+            current_state = to_process.pop()
+            if current_state in transition_sets.values():
                 continue
 
             # Determine the transition set for the DFA State we are building
-            stateTransitions = {}
+            state_transitions = {}
 
             # Find all states reachable from the current state set on a given letter.
             for symbol in self.alphabet:
-                nextState = self.nextNFAStates(currentState, symbol)
+                next_state = self.next_nfa_states(current_state, symbol)
 
                 preexists = False
-                for k, v in transitionSets.items():
-                    if v == nextState:
+                for k, v in transition_sets.items():
+                    if v == next_state:
                         preexists = True
-                        stateTransitions[symbol] = k
+                        state_transitions[symbol] = k
 
                 if not preexists:
-                    stateTransitions[symbol] = candidateName("".join(nextState), transitionSets)
+                    state_transitions[symbol] = new_name("".join(next_state), transition_sets)
 
-                if not (preexists or nextState in toProcess):
-                    toProcess.append(nextState)
+                if not (preexists or next_state in to_process):
+                    to_process.append(next_state)
 
-            cName = candidateName("".join(currentState), transitionSets)
-            transitionSets[cName] = currentState
+            cname = new_name("".join(current_state), transition_sets)
+            transition_sets[cname] = current_state
 
             accepting = False
-            for s in currentState:
+            for s in current_state:
                 if self.states[s].accepting:
                     accepting = True
                     break
 
-            DFAStates[cName] = State(cName, accepting, stateTransitions, self.alphabet)
+            dfa_states[cname] = State(cname, accepting, state_transitions, self.alphabet)
 
-        return DFA(DFAStates, startName, self.alphabet)
+        return DFA(dfa_states, start_name, self.alphabet)
 
     def description(self):
         """ Returns a description of this NFA in the format specified in the assignment specification. """
@@ -561,7 +561,7 @@ class NFA(object):
 
         description.write(",".join(names) + '\n')
         description.write(",".join(alphabet) + '\n')
-        description.write(self.startName + '\n')
+        description.write(self.start_name + '\n')
         description.write(",".join([n for n in names if self.states[n].accepting])  + '\n')
 
         for n in names:
@@ -576,70 +576,70 @@ class NFA(object):
         print(self.description(), end="")
 
     def copy(self):
-        return NFA({name: self.states[name].copy() for name in self.states.keys()}, self.startName, list(self.alphabet))
+        return NFA({name: self.states[name].copy() for name in self.states.keys()}, self.start_name, list(self.alphabet))
 
-    def renameStates(self):
+    def rename_states(self):
         """ Redesignates the states of this machine, if they have become unmanageably long unreadable strings. """
 
-        mapping = dict(zip(self.states, letterRange(len(self.states))))
+        mapping = dict(zip(self.states, letter_range(len(self.states))))
 
-        self.startName = mapping[self.startName]
+        self.start_name = mapping[self.start_name]
 
-        newStates = {}
+        new_states = {}
 
         for name in self.states:
-            newStates[mapping[name]] = self.states[name]
+            new_states[mapping[name]] = self.states[name]
 
-        self.states = newStates
+        self.states = new_states
 
         for name, state in self.states.items():
             state.name = name
             for symbol, destinations in state.transitions.items():
                 state.transitions[symbol] = [mapping[d] for d in destinations if d != '']
 
-    def removestate(self, stateName):
-        if stateName == self.startName:
-            newStart = NFAState("empty", False, {symbol: [] for symbol in self.alphabet + [NFAState.epsilon]}, self.alphabet)
-            self.stateName = "empty"
-            self.states = {"empty":newStart}
+    def remove_state(self, state_name):
+        if state_name == self.start_name:
+            new_start = NFAState("empty", False, {symbol: [] for symbol in self.alphabet + [NFAState.epsilon]}, self.alphabet)
+            self.state_name = "empty"
+            self.states = {"empty":new_start}
 
-        del self.states[stateName]
+        del self.states[state_name]
 
         for state in self.states.values():
             for dests in state.transitions.values():
-                if stateName in dests:
-                    dests.remove(stateName)
+                if state_name in dests:
+                    dests.remove(state_name)
 
 
-def parseNFA(n):
+def parse_nfa(n):
     """ Takes the description of an NFA, as a string, n. Returns a corresponding DFA."""
 
     buf = io.StringIO(n)
 
-    stateNames = [s.strip() for s in buf.readline().split(",")]
+    state_names = [s.strip() for s in buf.readline().split(",")]
     alphabet = [s.strip() for s in buf.readline().split(",")]
-    startName = buf.readline().strip()
-    acceptStates = [s.strip() for s in buf.readline().split(",")]
+    start_name = buf.readline().strip()
+    accept_states = [s.strip() for s in buf.readline().split(",")]
 
     if alphabet == ['']: alphabet = []
-    if acceptStates == ['']: acceptStates = []
+    if accept_states == ['']: accept_states = []
 
     transitions = []
     for line in buf:
-        tList = [s.strip()[1:-1].split(",") for s in re.split(r"\s*,\s*(?={.*})", line)]
-        for i, dest in enumerate(tList):
+        tlist = [s.strip()[1:-1].split(",") for s in re.split(r"\s*,\s*(?={.*})", line)]
+        for i, dest in enumerate(tlist):
             if dest == ['']:
-                tList[i] = []
-        transitions.append(tList)
+                tlist[i] = []
+        transitions.append(tlist)
 
     buf.close()
 
-    if len(stateNames) == 0 or stateNames == ['']:
+    if len(state_names) == 0 or state_names == ['']:
         raise ValueError("At least one state required.")
 
-    states = {stateNames[i]: NFAState(stateNames[i], stateNames[i] in acceptStates, dict(zip(alphabet + [NFAState.epsilon], transitions[i])), alphabet, stateNames) for i in range(len(stateNames))}
+    states = {state_names[i]: NFAState(state_names[i], state_names[i] in accept_states, dict(zip(alphabet + [NFAState.epsilon], transitions[i])), alphabet, state_names) for i in range(len(state_names))}
 
-    return NFA(states, startName, alphabet)
+    return NFA(states, start_name, alphabet)
 
 
 
@@ -649,12 +649,12 @@ def union(machine1, machine2):
     """ Takes two machines, returns a DFA accepting the union of their languages. """
 
     if isinstance(machine1, NFA):
-        machine1 = machine1.toDFA().minimised()
+        machine1 = machine1.dfa().minimised()
     else:
         machine1 = machine1.minimised()
 
     if isinstance(machine2, NFA):
-        machine2 = machine2.toDFA().minimised()
+        machine2 = machine2.dfa().minimised()
     else:
         machine1 = machine1.minimised()
 
@@ -670,68 +670,68 @@ def union(machine1, machine2):
     alphabet = list(alphabet)
 
     # Build the set of states for the united machine
-    unionStates = {}
+    union_states = {}
 
-    stateNames = []
+    state_names = []
     for name in machine1.states:
-        stateNames.append("1" + name)
+        state_names.append("1" + name)
     for name in machine2.states:
-        stateNames.append("2" + name)
+        state_names.append("2" + name)
 
     # Construct the new start state, with epsilon transitions to the start states of the constituent machines
-    startName = candidateName("st", stateNames)
-    stateNames.append(startName)
+    start_name = new_name("st", state_names)
+    state_names.append(start_name)
 
-    startTransitions = {}
+    start_transitions = {}
     for symbol in alphabet:
-        startTransitions[symbol] = []
-    startTransitions[NFAState.epsilon] = ["1" + machine1.startName, "2" + machine2.startName]
+        start_transitions[symbol] = []
+    start_transitions[NFAState.epsilon] = ["1" + machine1.start_name, "2" + machine2.start_name]
 
-    unionStates[startName] = NFAState(startName, False, startTransitions, alphabet, stateNames)
+    union_states[start_name] = NFAState(start_name, False, start_transitions, alphabet, state_names)
 
     # Construct an error state, required if the input machines are defined over different alphabets
-    errorName = candidateName("er", stateNames)
-    stateNames.append(errorName)
+    error_name = new_name("er", state_names)
+    state_names.append(error_name)
 
-    errorTransitions = {}
+    error_transitions = {}
     for symbol in alphabet + [NFAState.epsilon]:
-        errorTransitions[symbol] = [errorName]
+        error_transitions[symbol] = [error_name]
 
-    unionStates[errorName] = NFAState(errorName, False, errorTransitions, alphabet, stateNames)
+    union_states[error_name] = NFAState(error_name, False, error_transitions, alphabet, state_names)
 
     # States of each constituent machine have a numeral prepended to guarantee uniqueness in the united machine
     # Where a symbol was not defined in the alphabet of one of the machines, transition on that symbol to a common error state.
     for name, state in machine1.states.items():
-        newTransitions = {}
+        new_transitions = {}
         for symbol, dest in state.transitions.items():
-            newTransitions[symbol] = ["1" + dest]
+            new_transitions[symbol] = ["1" + dest]
 
         for symbol in absent1:
-            newTransitions[symbol] = [errorName]
+            new_transitions[symbol] = [error_name]
 
-        newTransitions[NFAState.epsilon] = []
+        new_transitions[NFAState.epsilon] = []
 
-        unionStates["1" + name] = NFAState("1" + name, state.accepting, newTransitions, alphabet, stateNames)
+        union_states["1" + name] = NFAState("1" + name, state.accepting, new_transitions, alphabet, state_names)
 
     for name, state in machine2.states.items():
-        newTransitions = {}
+        new_transitions = {}
         for symbol, dest in state.transitions.items():
-            newTransitions[symbol] = ["2" + dest]
+            new_transitions[symbol] = ["2" + dest]
 
         for symbol in absent2:
-            newTransitions[symbol] = [errorName]
+            new_transitions[symbol] = [error_name]
 
-        newTransitions[NFAState.epsilon] = []
+        new_transitions[NFAState.epsilon] = []
 
-        unionStates["2" + name] = NFAState("2" + name, state.accepting, newTransitions, alphabet, stateNames)
+        union_states["2" + name] = NFAState("2" + name, state.accepting, new_transitions, alphabet, state_names)
 
-    return NFA(unionStates, startName, alphabet).toDFA().minimised()
+    return NFA(union_states, start_name, alphabet).dfa().minimised()
 
 
 def complement(m):
     """ Given a machine accepting L, returns a DFA accepting the complement of L. """
     if isinstance(m, NFA):
-        machine = m.toDFA()
+        machine = m.dfa()
     else:
         machine = m.copy()
 
@@ -752,36 +752,36 @@ def intersection(m1, m2):
 def star(m):
     """ Given a machine accepting L, returns a machine accepting L* """
     if isinstance(m, DFA):
-        machine = m.toNFA()
+        machine = m.nfa()
     else:
         machine = m.copy()
 
     #add epsilons from accept states back to start
     for state in machine.states.values():
         if state.accepting:
-            state.transitions[NFAState.epsilon] = [machine.startName]
+            state.transitions[NFAState.epsilon] = [machine.start_name]
 
     #add new start state
-    startName = candidateName("st*", machine.states, "*")
+    start_name = new_name("st*", machine.states, "*")
 
-    startTransitions = {}
+    start_transitions = {}
     for symbol in machine.alphabet:
-        startTransitions[symbol] = []
-    startTransitions[NFAState.epsilon] = [machine.startName]
+        start_transitions[symbol] = []
+    start_transitions[NFAState.epsilon] = [machine.start_name]
 
-    machine.states[startName] = NFAState(startName, True, startTransitions, machine.alphabet)
-    machine.startName = startName
+    machine.states[start_name] = NFAState(start_name, True, start_transitions, machine.alphabet)
+    machine.start_name = start_name
 
-    return machine.toDFA()
+    return machine.dfa()
 
 
 def concatenation(machine1, machine2):
     """ Takes two machines, returns a DFA accepting the concatenation of their languages. """
 
     if isinstance(machine1, NFA):
-        machine1 = machine1.toDFA().minimised()
+        machine1 = machine1.dfa().minimised()
     if isinstance(machine2, NFA):
-        machine2 = machine2.toDFA().minimised()
+        machine2 = machine2.dfa().minimised()
 
 
     # Build the common alphabet
@@ -795,54 +795,54 @@ def concatenation(machine1, machine2):
     alphabet = list(alphabet)
 
     # Build the set of states for the united machine
-    concatStates = {}
+    concat_states = {}
 
-    stateNames = []
+    state_names = []
     for name in machine1.states:
-        stateNames.append("1" + name)
+        state_names.append("1" + name)
     for name in machine2.states:
-        stateNames.append("2" + name)
+        state_names.append("2" + name)
 
     # Construct an error state, required if the input machines are defined over different alphabets
-    errorName = candidateName("er", stateNames)
-    stateNames.append(errorName)
+    error_name = new_name("er", state_names)
+    state_names.append(error_name)
 
-    errorTransitions = {}
+    error_transitions = {}
     for symbol in alphabet + [NFAState.epsilon]:
-        errorTransitions[symbol] = [errorName]
+        error_transitions[symbol] = [error_name]
 
-    concatStates[errorName] = NFAState(errorName, False, errorTransitions, alphabet, stateNames)
+    concat_states[error_name] = NFAState(error_name, False, error_transitions, alphabet, state_names)
 
     # States of each constituent machine have a numeral prepended to guarantee uniqueness in the united machine
     # Where a symbol was not defined in the alphabet of one of the machines, transition on that symbol to a common error state.
     for name, state in machine1.states.items():
-        newTransitions = {}
+        new_transitions = {}
         for symbol, dest in state.transitions.items():
-            newTransitions[symbol] = ["1" + dest]
+            new_transitions[symbol] = ["1" + dest]
 
         for symbol in absent1:
-            newTransitions[symbol] = [errorName]
+            new_transitions[symbol] = [error_name]
 
         if state.accepting:
-            newTransitions[NFAState.epsilon] = ["2" + machine2.startName]
+            new_transitions[NFAState.epsilon] = ["2" + machine2.start_name]
         else:
-            newTransitions[NFAState.epsilon] = []
+            new_transitions[NFAState.epsilon] = []
 
-        concatStates["1" + name] = NFAState("1" + name, False, newTransitions, alphabet, stateNames)
+        concat_states["1" + name] = NFAState("1" + name, False, new_transitions, alphabet, state_names)
 
     for name, state in machine2.states.items():
-        newTransitions = {}
+        new_transitions = {}
         for symbol, dest in state.transitions.items():
-            newTransitions[symbol] = ["2" + dest]
+            new_transitions[symbol] = ["2" + dest]
 
         for symbol in absent2:
-            newTransitions[symbol] = [errorName]
+            new_transitions[symbol] = [error_name]
 
-        newTransitions[NFAState.epsilon] = []
+        new_transitions[NFAState.epsilon] = []
 
-        concatStates["2" + name] = NFAState("2" + name, state.accepting, newTransitions, alphabet, stateNames)
+        concat_states["2" + name] = NFAState("2" + name, state.accepting, new_transitions, alphabet, state_names)
 
-    return NFA(concatStates, "1" + machine1.startName, alphabet).toDFA().minimised()
+    return NFA(concat_states, "1" + machine1.start_name, alphabet).dfa().minimised()
 
 
 def reversal(m):
@@ -851,25 +851,25 @@ def reversal(m):
         Although I am not sure my implementation actually produces a minimal machine. """
 
     if isinstance(m, DFA):
-        machine = m.toNFA()
-        m = m.toNFA()
+        machine = m.nfa()
+        m = m.nfa()
     else:
         machine = m.copy()
 
     # Construct new start state with epsilon transitions to the previously accepting states
-    startName = candidateName("st<>", machine.states, "<>")
-    startTransitions = {}
+    start_name = new_name("st<>", machine.states, "<>")
+    start_transitions = {}
     for symbol in machine.alphabet:
-        startTransitions[symbol] = []
-    epsilonTransitions = []
+        start_transitions[symbol] = []
+    epsilon_transitions = []
     for state in machine.states.values():
         if state.accepting:
-            epsilonTransitions.append(state.name)
+            epsilon_transitions.append(state.name)
             state.accepting = False
-    startTransitions[NFAState.epsilon] = epsilonTransitions
+    start_transitions[NFAState.epsilon] = epsilon_transitions
 
     # The new accept state is what was the start state
-    machine.states[machine.startName].accepting = True
+    machine.states[machine.start_name].accepting = True
 
     # First clear all transitions
     for state in machine.states.values():
@@ -883,15 +883,15 @@ def reversal(m):
                 machine.states[dest].transitions[symbol].append(state.name)
 
     # Post-reversal, add the new start state
-    machine.states[startName] = NFAState(startName, False, startTransitions, machine.alphabet)
-    machine.startName = startName
+    machine.states[start_name] = NFAState(start_name, False, start_transitions, machine.alphabet)
+    machine.start_name = start_name
 
-    machine = machine.toDFA()
+    machine = machine.dfa()
 
     # Discard any now-unreachable states
-    reachables = machine.startTransClosure()
-    stateNames = list(machine.states.keys())
-    for name in stateNames:
+    reachables = machine.start_trans_closure()
+    state_names = list(machine.states.keys())
+    for name in state_names:
         if name not in reachables:
             del machine.states[name]
 
@@ -923,9 +923,9 @@ def equivalent(machine1, machine2, example=False):
         on which the two machines differ will be printed."""
 
     if isinstance(machine1, NFA):
-        machine1 = machine1.toDFA()
+        machine1 = machine1.dfa()
     if isinstance(machine2, NFA):
-        machine2 = machine2.toDFA()
+        machine2 = machine2.dfa()
 
     machine1 = machine1.minimised()
     machine2 = machine2.minimised()
@@ -942,11 +942,11 @@ def equivalent(machine1, machine2, example=False):
         #  strings rejected by the second machine, which are naturally accepted by the first.
         # Similarly, if the second machine is empty, we'll miss strings accepted by the first.
         if full(machine1):
-            s = findAcceptedString(c2)
+            s = find_accepted_string(c2)
         elif empty(machine2):
-            s = findAcceptedString(machine1)
+            s = find_accepted_string(machine1)
         else:
-            s = findAcceptedString(intersection(c1, machine2))
+            s = find_accepted_string(intersection(c1, machine2))
 
         print('Machines differ on "' + s + '".')
 
@@ -960,24 +960,24 @@ def clamp(n, minn, maxn):
     return max(minn, min(maxn, n))
 
 
-def candidateName(candidate, nameSet, addend="_"):
+def new_name(candidate, nameSet, addend="_"):
     """ Small utility function for finding a name which does not conflict with existing names.
         Since many names are built from atomic concatenations, conflicts are conceivable.
         e.g. a1+a2+a3 == a1a+2a3 """
 
-    cName = candidate
+    cname = candidate
 
     # Handling the empty set, as empty strings are used for epsilon, etc.
-    if cName == "":
-        cName = "()"
+    if cname == "":
+        cname = "()"
 
-    while cName in nameSet:
-        cName += addend
+    while cname in nameSet:
+        cname += addend
 
-    return cName
+    return cname
 
 
-def letterRange(n):
+def letter_range(n):
     """ Produces a list of capital letter strings: [A, B, C, ..., AB, BB, ...] """
     alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     l = len(alphabet)
@@ -997,10 +997,10 @@ def letterRange(n):
     return outlist
 
 
-def findAcceptedString(machine):
+def find_accepted_string(machine):
     """ Returns a string accepted by the given machine. """
     if isinstance(machine, NFA):
-        machine = machine.toDFA()
+        machine = machine.dfa()
     machine = machine.minimised()
 
     if empty(machine):
@@ -1012,17 +1012,17 @@ def findAcceptedString(machine):
         if state.accepting:
             dest = state.name
 
-    return machine.shortestPath(machine.startName, dest)
+    return machine.shortest_path(machine.start_name, dest)
 
 
-def loadFA(filename):
+def load_fa(filename):
     """ Given a filename, returns the machine described in that file. """
     with open(filename, 'r') as f:
         s = f.read()
         if "{" in s:
-            return parseNFA(s).toDFA().minimised()
+            return parse_nfa(s).dfa().minimised()
         else:
-            return parseDFA(s)
+            return parse_dfa(s)
 
     return None
 
@@ -1048,7 +1048,7 @@ class Draggable(object):
 class FAContext(Frame):
     """ Contains all the required information and methods for drawing a DFA in a window. """
 
-    def __init__(self, parent, w, h, machine, renameStates=True, annealing=True, springdist=100, gravdist=280, edgeLabels=True, stateLabels=False):
+    def __init__(self, parent, w, h, machine, rename_states=True, annealing=True, springdist=100, gravdist=280, edge_labels=True, state_labels=False):
 
         Frame.__init__(self, parent, background="white")
 
@@ -1058,36 +1058,36 @@ class FAContext(Frame):
 
         self.parent.geometry('%dx%d+%d+%d' % (w, h, 300, 300))
 
-        self.stateLabels = stateLabels
-        self.edgeLabels = edgeLabels
+        self.state_labels = state_labels
+        self.edge_labels = edge_labels
 
         self.annealing = annealing
 
-        self.naturalSpring = springdist
+        self.natural_spring = springdist
         self.gravdist = gravdist
-        self.springConstant = 0.06
-        self.gravConstant = 0.02
+        self.spring_const = 0.06
+        self.grav_const = 0.02
 
         self.dragged = None
 
         if isinstance(machine, NFA):
-            self.machine = machine.toDFA()
+            self.machine = machine.dfa()
         else:
             self.machine = machine.copy()
-        if renameStates:
-            self.machine.renameStates()
+        if rename_states:
+            self.machine.rename_states()
 
         self.pack(fill=BOTH, expand=1)
         self.parent.focus_force()
 
-        self.initUI()
-        self.buildMachineGraph()
-        self.annealGraph()
+        self.init_ui()
+        self.build_machine_graph()
+        self.anneal_graph()
 
-    def moveConnections(self, item):
+    def move_connections(self, item):
         """ Upon moving a node, update the positions of all its connections and labels. """
 
-        dest = self.getItemCentre(item)
+        dest = self.get_item_centre(item)
         name = self.canvas.gettags(item)[0]
 
         outgoing = self.canvas.find_withtag("o" + name)
@@ -1110,7 +1110,7 @@ class FAContext(Frame):
             labels = self.canvas.find_withtag("l" + str(line))
             for label in labels:
                 if self.canvas.itemcget(label, "text") == symbol:
-                    self.canvas.coords(label, *self.proxpoint(coords[:2], self.getItemCentre(self.canvas.find_withtag(distal)[0])))
+                    self.canvas.coords(label, *self.proxpoint(coords[:2], self.get_item_centre(self.canvas.find_withtag(distal)[0])))
                 self.canvas.tag_raise(label)
 
 
@@ -1130,11 +1130,11 @@ class FAContext(Frame):
             labels = self.canvas.find_withtag("l" + str(line))
             for label in labels:
                 if self.canvas.itemcget(label, "text") == symbol:
-                    self.canvas.coords(label, *self.proxpoint(self.getItemCentre(self.canvas.find_withtag(proximal)[0]), coords[2:]))
+                    self.canvas.coords(label, *self.proxpoint(self.get_item_centre(self.canvas.find_withtag(proximal)[0]), coords[2:]))
                 self.canvas.tag_raise(label)
 
         for loop in loops:
-            coords = self.getBoxByCentre([dest[0], dest[1]-20], 10)
+            coords = self.get_box_by_centre([dest[0], dest[1]-20], 10)
             self.canvas.coords(loop, *coords)
             self.canvas.tag_lower(loop)
 
@@ -1145,19 +1145,19 @@ class FAContext(Frame):
                 self.canvas.tag_raise(label)
 
 
-        stateLabel = self.canvas.find_withtag("n" + name)
-        if stateLabel != ():
-            stateLabel = stateLabel[0]
-            labelCoords = self.canvas.coords(stateLabel)
-            labelCoords[0] = dest[0]
-            labelCoords[1] = dest[1]
-            self.canvas.coords(stateLabel, *labelCoords)
-            self.canvas.tag_raise(stateLabel)
+        state_label = self.canvas.find_withtag("n" + name)
+        if state_label != ():
+            state_label = state_label[0]
+            label_coords = self.canvas.coords(state_label)
+            label_coords[0] = dest[0]
+            label_coords[1] = dest[1]
+            self.canvas.coords(state_label, *label_coords)
+            self.canvas.tag_raise(state_label)
 
-        self.canvas.tag_lower(self.deleteText)
-        self.canvas.tag_lower(self.deleteRectangle)
+        self.canvas.tag_lower(self.delete_text)
+        self.canvas.tag_lower(self.delete_rectangle)
 
-    def mouseClick(self, event):
+    def mouse_click(self, event):
         clickcoords = [self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)]
         clicked = self.canvas.find_withtag("current")
 
@@ -1175,7 +1175,7 @@ class FAContext(Frame):
             self.canvas.tag_raise(clicked)
             self.dragged = Draggable(self.canvas.coords(clicked), clickcoords, clicked)
 
-    def moveClick(self, event):
+    def move_click(self, event):
         """ Handle the user moving the mouse with the mouse button held down. """
         if self.dragged is not None:
             x = clamp(self.canvas.canvasx(event.x) + self.dragged.clickoffset[0], 0, self.width - 40)
@@ -1189,51 +1189,51 @@ class FAContext(Frame):
                 self.dragged.coords = [x, y, x+w, y+h]
 
             self.canvas.coords(self.dragged.item, *self.dragged.coords)
-            self.moveConnections(self.dragged.item)
+            self.move_connections(self.dragged.item)
 
-    def releaseClick(self, event):
+    def release_click(self, event):
         if self.dragged is not None:
             if self.canvas.type(self.dragged.item) == "oval":
-                deleteCoords = self.canvas.coords(self.deleteRectangle)
-                itemCoords = self.canvas.coords(self.dragged.item)
+                del_coords = self.canvas.coords(self.delete_rectangle)
+                item_coords = self.canvas.coords(self.dragged.item)
 
-                if (itemCoords[0] > deleteCoords[0] and itemCoords[0] < deleteCoords[2]-40 and
-                    itemCoords[1] > deleteCoords[1] and itemCoords[1] < deleteCoords[3]):
-                    self.machine.removestate(self.canvas.gettags(self.dragged.item)[0])
-                    self.buildMachineGraph()
+                if (item_coords[0] > del_coords[0] and item_coords[0] < del_coords[2]-40 and
+                    item_coords[1] > del_coords[1] and item_coords[1] < del_coords[3]):
+                    self.machine.remove_state(self.canvas.gettags(self.dragged.item)[0])
+                    self.build_machine_graph()
 
         self.dragged = None
 
-    def resizeCanvas(self, event):
+    def resize_canvas(self, event):
         """ Update the bounds of the canvas when the window is resized. """
         self.width = event.width
         self.height = event.height
 
-        self.gravScale.place(x=120, y=self.height-70)
-        self.springScale.place(x=10, y=self.height-70)
+        self.gravscale.place(x=120, y=self.height-70)
+        self.springscale.place(x=10, y=self.height-70)
 
-        self.gravEntry.place(x=350, y=self.height-36)
-        self.gravEntryButton.place(x=400, y=self.height-36)
+        self.graventry.place(x=350, y=self.height-36)
+        self.graventry_button.place(x=400, y=self.height-36)
 
-        self.springEntry.place(x=235, y=self.height-36)
-        self.springEntryButton.place(x=285, y=self.height-36)
+        self.springentry.place(x=235, y=self.height-36)
+        self.springentry_button.place(x=285, y=self.height-36)
 
-        self.edgeLabelCheck.place(x=self.width-200, y=10)
-        self.stateLabelCheck.place(x=self.width-100, y=10)
+        self.edgelabel_check.place(x=self.width-200, y=10)
+        self.statelabel_check.place(x=self.width-100, y=10)
 
-        self.quitButton.place(x=self.width-40, y=self.height-95)
+        self.quitbutton.place(x=self.width-40, y=self.height-95)
 
-        self.fileEntry.place(x=self.width-155, y=self.height-65)
-        self.fileEntryButton.place(x=self.width-220, y=self.height-65)
+        self.file_entry.place(x=self.width-155, y=self.height-65)
+        self.file_entry_button.place(x=self.width-220, y=self.height-65)
 
-        self.checkEntry.place(x=self.width-155, y=self.height-36)
-        self.checkEntryButton.place(x=self.width-243, y=self.height-36)
+        self.checkentry.place(x=self.width-155, y=self.height-36)
+        self.checkentry_button.place(x=self.width-243, y=self.height-36)
 
-    def getItemCentre(self, item):
+    def get_item_centre(self, item):
         coords = self.canvas.coords(item)
         return [sum(x)/2 for x in zip(coords[:2], coords[2:])]
 
-    def getBoxByCentre(self, p, radius):
+    def get_box_by_centre(self, p, radius):
         return [p[0]-radius, p[1]-radius, p[0]+radius, p[1]+radius]
 
     def proxpoint(self, p1, p2):
@@ -1251,105 +1251,105 @@ class FAContext(Frame):
 
         return [p1[0] + (p2[0]-p1[0])/scale, p1[1] + (p2[1]-p1[1])/scale]
 
-    def toggleStateLabels(self):
-        self.stateLabels = not self.stateLabels
+    def toggle_state_labels(self):
+        self.state_labels = not self.state_labels
 
         labels = self.canvas.find_withtag("tsLabel")
 
-        newState = "hidden"
+        newstate = "hidden"
 
-        if self.stateLabels:
-            newState = "normal"
+        if self.state_labels:
+            newstate = "normal"
 
         for label in labels:
-            self.canvas.itemconfig(label, state=newState)
+            self.canvas.itemconfig(label, state=newstate)
 
-    def toggleEdgeLabels(self):
-        self.edgeLabels = not self.edgeLabels
+    def toggle_edge_labels(self):
+        self.edge_labels = not self.edge_labels
 
         labels = self.canvas.find_withtag("teLabel")
 
-        newState = "hidden"
+        newstate = "hidden"
 
-        if self.edgeLabels:
-            newState = "normal"
+        if self.edge_labels:
+            newstate = "normal"
 
         for label in labels:
-            self.canvas.itemconfig(label, state=newState)
+            self.canvas.itemconfig(label, state=newstate)
 
-    def toggleAnnealing(self):
+    def toggle_annealing(self):
         self.annealing = not self.annealing
 
         if self.annealing:
-            self.simButton.config(relief="sunken")
-            self.parent.after(17, self.annealGraph)
+            self.simbutton.config(relief="sunken")
+            self.parent.after(17, self.anneal_graph)
         else:
-            self.simButton.config(relief="groove")
+            self.simbutton.config(relief="groove")
 
-    def updategravdist(self, val):
+    def update_grav_dist(self, val):
         self.gravdist = int(val)
 
-    def updatespringdist(self, val):
-        self.naturalSpring = int(val)
+    def update_spring_dist(self, val):
+        self.natural_spring = int(val)
 
-    def updatespringconstant(self):
-        self.springConstant = float(self.springEntry.get())
+    def update_spring_const(self):
+        self.spring_const = float(self.springentry.get())
         self.parent.focus()
 
-    def updategravconstant(self):
-        self.gravConstant = float(self.gravEntry.get())
+    def update_grav_const(self):
+        self.grav_const = float(self.graventry.get())
         self.parent.focus()
 
-    def annealGraph(self):
+    def anneal_graph(self):
         """ Settles the graph into a possibly-more-pleasing shape than a random splatter.
             It is a little rubbish at the moment, though. """
 
-        newCoords = []
+        newcoords = []
 
-        numNodes = len(self.nodes)
+        numnodes = len(self.nodes)
 
         # There is no force exerted by a single node or fewer.
-        if numNodes < 2:
+        if numnodes < 2:
             return
 
         # Calculate forces for every node in the graph.
-        for i in range(numNodes):
-            springVectors = []
-            gravVectors = []
+        for i in range(numnodes):
+            spring_vectors = []
+            grav_vectors = []
             forces = []
 
-            centre = self.getItemCentre(self.nodes[i])
+            centre = self.get_item_centre(self.nodes[i])
             selfname = self.canvas.gettags(self.nodes[i])[0]
 
             # Find the vectors to this node from every other node in the graph.
             for p in self.nodes[:i] + self.nodes[i+1:]:
-                exocentre = self.getItemCentre(p)
+                exocentre = self.get_item_centre(p)
                 diff = [exocentre[0]-centre[0], exocentre[1]-centre[1]]
 
-                gravVectors.append(diff)
+                grav_vectors.append(diff)
 
                 distname = self.canvas.gettags(p)[0]
                 if distname not in self.machine.states[selfname].transitions.values():
                     if selfname not in self.machine.states[distname].transitions.values():
                         continue
-                springVectors.append(diff)
+                spring_vectors.append(diff)
 
             # Calculate the forces on this node from all nodes connected to it by an edge.
-            for v in springVectors:
-                scale = math.sqrt(v[0]**2 + v[1]**2)/self.naturalSpring
+            for v in spring_vectors:
+                scale = math.sqrt(v[0]**2 + v[1]**2)/self.natural_spring
 
                 if scale == 0:
                     scale = 0.001
 
                 relaxed = [v[0]/scale, v[1]/scale]
 
-                x = (v[0] - relaxed[0])*self.springConstant
-                y = (v[1] - relaxed[1])*self.springConstant
+                x = (v[0] - relaxed[0])*self.spring_const
+                y = (v[1] - relaxed[1])*self.spring_const
 
                 forces.append([x, y])
 
             # Every node in the graph exerts a force on every other node, more weakly than springs.
-            for v in gravVectors:
+            for v in grav_vectors:
                 scale = math.sqrt(v[0]**2 + v[1]**2)/self.gravdist
 
                 if scale == 0:
@@ -1357,36 +1357,36 @@ class FAContext(Frame):
 
                 relaxed = [v[0]/scale, v[1]/scale]
 
-                x = (v[0] - relaxed[0])*self.gravConstant
-                y = (v[1] - relaxed[1])*self.gravConstant
+                x = (v[0] - relaxed[0])*self.grav_const
+                y = (v[1] - relaxed[1])*self.grav_const
 
                 forces.append([x, y])
 
             force = [sum(component) for component in zip(*forces)]
 
             centre = [clamp(centre[0]+force[0], 20, self.width - 20), clamp(centre[1]+force[1], 20, self.height - 20)]
-            newCoords.append(self.getBoxByCentre(centre, 20))
+            newcoords.append(self.get_box_by_centre(centre, 20))
 
         # Move the nodes according to the net force on them, but don't move items currently being dragged.
-        for node, coord in zip(self.nodes, newCoords):
+        for node, coord in zip(self.nodes, newcoords):
             if self.dragged is not None:
                 if node == self.dragged.item[0]:
                     continue
             self.canvas.coords(node, *coord)
-            self.moveConnections(node)
+            self.move_connections(node)
 
         if self.annealing:
-            self.parent.after(17, self.annealGraph)
+            self.parent.after(17, self.anneal_graph)
 
-    def buildMachineGraph(self):
+    def build_machine_graph(self):
         """ Creates and tags all the nodes, labels, interconnections for drawing the given machine. """
 
         self.canvas.delete("all")
 
         self.nodes = []
 
-        edgeLabelState = "normal" if self.edgeLabels else "hidden"
-        stateLabelState = "normal" if self.stateLabels else "hidden"
+        edgelabel_state = "normal" if self.edge_labels else "hidden"
+        statelabel_state = "normal" if self.state_labels else "hidden"
 
         for state in self.machine.states.values():
             name = state.name
@@ -1399,7 +1399,7 @@ class FAContext(Frame):
 
             pattern = []
 
-            if state.name == self.machine.startName:
+            if state.name == self.machine.start_name:
                 pattern = [15, 8]
                 colour = "#fff"
                 activecolour = "#fee"
@@ -1410,45 +1410,45 @@ class FAContext(Frame):
 
             self.nodes.append(self.canvas.create_oval(x, y, x+40, y+40, outline="#444", fill=colour, activefill=activecolour, tag=name, width=thickness, dash=pattern))
 
-            self.canvas.create_text(x+20, y+20, fill="#444", font=("Purisa", 14), text=name, tags=("n"+name, "tsLabel"), state=stateLabelState)
+            self.canvas.create_text(x+20, y+20, fill="#444", font=("Purisa", 14), text=name, tags=("n"+name, "tsLabel"), state=statelabel_state)
 
             for sym, dest in state.transitions.items():
-                labelOffset = random.choice(['n', 'e', 's', 'w'])
-                loopOffset = random.choice(['center', 'sw', 'se'])
+                labeloffset = random.choice(['n', 'e', 's', 'w'])
+                loopoffset = random.choice(['center', 'sw', 'se'])
 
                 if name == dest:
                     l = self.canvas.create_oval(x+10, y-10, x+30, y+10, fill="", tags=("i" + name, "s" + sym))
-                    self.canvas.create_text(x+20, y-10, fill="#334", font=("Purisa", 13), text=sym, tags=("l"+str(l), "teLabel"), anchor=loopOffset, state=edgeLabelState)
+                    self.canvas.create_text(x+20, y-10, fill="#334", font=("Purisa", 13), text=sym, tags=("l"+str(l), "teLabel"), anchor=loopoffset, state=edgelabel_state)
                     self.canvas.tag_lower(l)
                 else:
                     l = self.canvas.create_line(x, y, x+40, y+40, fill="#555", smooth=1, arrow="last", arrowshape=[21, 26, 3], tags=("o" + name, "d" + dest, "s" + sym))
-                    self.canvas.create_text(x+20, y+20, anchor=labelOffset, fill="#334", font=("Purisa", 13), text=sym, tags=("l"+str(l), "teLabel"), state=edgeLabelState)
+                    self.canvas.create_text(x+20, y+20, anchor=labeloffset, fill="#334", font=("Purisa", 13), text=sym, tags=("l"+str(l), "teLabel"), state=edgelabel_state)
                     self.canvas.tag_lower(l)
 
         for node in self.nodes:
-            self.moveConnections(node)
+            self.move_connections(node)
 
 
-        self.deleteText = self.canvas.create_text([15, 45], anchor='nw', text="Delete\nNode", font=("Helvetica, 10"), width=50, tag="delete")
-        self.canvas.tag_lower(self.deleteText)
-        self.deleteRectangle = self.canvas.create_rectangle([10, 40, 70, 100], fill="#ddd", tag="delete")
-        self.canvas.tag_lower(self.deleteRectangle)
+        self.delete_text = self.canvas.create_text([15, 45], anchor='nw', text="Delete\nNode", font=("Helvetica, 10"), width=50, tag="delete")
+        self.canvas.tag_lower(self.delete_text)
+        self.delete_rectangle = self.canvas.create_rectangle([10, 40, 70, 100], fill="#ddd", tag="delete")
+        self.canvas.tag_lower(self.delete_rectangle)
 
 
-    def describeActiveMachine(self):
+    def describe_active_machine(self):
         self.machine.describe()
         print()
 
-    def checkActiveMachine(self):
-        self.machine.checkString(self.checkEntry.get())
-        self.checkEntry.delete(0, "end")
+    def check_active_machine(self):
+        self.machine.check_string(self.checkentry.get())
+        self.checkentry.delete(0, "end")
         print()
 
-    def modActiveMachine(self, transform, sim=True):
+    def mod_active_machine(self, transform, sim=True):
         """ Replaces the current machine with a transformed version."""
         if self.annealing:
-            self.toggleAnnealing()
-            self.parent.after(100, self.modActiveMachine, transform)
+            self.toggle_annealing()
+            self.parent.after(100, self.mod_active_machine, transform)
             return
 
         if transform == "minimise":
@@ -1460,137 +1460,137 @@ class FAContext(Frame):
         elif transform == "star":
             self.machine = star(self.machine.minimised())
         elif transform == "rename":
-            self.machine.renameStates()
+            self.machine.rename_states()
         elif transform == "load":
-            self.loadActiveMachine(self.fileEntry.get()) #TODO: Work out why I couldn't pass this as an argument
+            self.load_active_machine(self.file_entry.get()) #TODO: Work out why I couldn't pass this as an argument
 
-        self.buildMachineGraph()
+        self.build_machine_graph()
 
         self.parent.focus()
 
         if sim:
-            self.toggleAnnealing()
+            self.toggle_annealing()
 
-    def loadActiveMachine(self, filename):
+    def load_active_machine(self, filename):
         """ Replaces the currently-active machine with one defined in filename, if it is valid. """
         try:
             with open(filename, 'r') as f:
                 s = f.read()
                 if "{" in s:
-                    self.machine = parseNFA(s).toDFA().minimised()
+                    self.machine = parse_nfa(s).dfa().minimised()
                 else:
-                    self.machine = parseDFA(s)
+                    self.machine = parse_dfa(s)
         except:
-            self.fileEntry.delete(0, "end")
+            self.file_entry.delete(0, "end")
 
-    def initUI(self):
+    def init_ui(self):
         """ Build the interface. """
 
         self.parent.title("DFA Viz")
         self.parent.bind("<Escape>", lambda e: self.parent.destroy())
-        self.bind("<Configure>", self.resizeCanvas)
+        self.bind("<Configure>", self.resize_canvas)
 
         self.canvas = Canvas(self, background="white")
-        self.canvas.bind("<Button-1>", self.mouseClick)
-        self.canvas.bind("<B1-Motion>", self.moveClick)
-        self.canvas.bind("<ButtonRelease-1>", self.releaseClick)
+        self.canvas.bind("<Button-1>", self.mouse_click)
+        self.canvas.bind("<B1-Motion>", self.move_click)
+        self.canvas.bind("<ButtonRelease-1>", self.release_click)
 
-        bFont = ("Helvetica", 10)
+        bfont = ("Helvetica", 10)
 
-        self.simButton = Button(self, font=bFont, padx=0, pady=0, text="Toggle Sim", relief="sunken", command=self.toggleAnnealing)
-        self.simButton.place(x=10, y=10)
-
-
-        self.gravScale = Scale(self, from_=20, to=500, orient="horizontal", label="grav radius", command=self.updategravdist)
-        self.gravScale.set(self.gravdist)
-        self.gravScale.place(x=120, y=self.height-70)
-
-        self.springScale = Scale(self, from_=20, to=500, orient="horizontal", label="spring radius", command=self.updatespringdist)
-        self.springScale.set(self.naturalSpring)
-        self.springScale.place(x=10, y=self.height-70)
+        self.simbutton = Button(self, font=bfont, padx=0, pady=0, text="Toggle Sim", relief="sunken", command=self.toggle_annealing)
+        self.simbutton.place(x=10, y=10)
 
 
-        self.springEntry = Entry(self, font=bFont, width=6, justify="right", bg="#eee")
-        self.springEntry.place(x=235, y=self.height-36)
-        self.springEntry.insert(0, str(self.springConstant))
-        self.springEntryButton = Button(self, font=bFont, padx=0, pady=0, text="spr const", command=self.updatespringconstant)
-        self.springEntryButton.place(x=285, y=self.height-36)
-        self.springEntry.bind("<Return>", lambda e: self.updatespringconstant())
+        self.gravscale = Scale(self, from_=20, to=500, orient="horizontal", label="grav radius", command=self.update_grav_dist)
+        self.gravscale.set(self.gravdist)
+        self.gravscale.place(x=120, y=self.height-70)
 
-        self.gravEntry = Entry(self, font=bFont, width=6, justify="right", bg="#eee")
-        self.gravEntry.place(x=350, y=self.height-36)
-        self.gravEntry.insert(0, str(self.gravConstant))
-        self.gravEntryButton = Button(self, font=bFont, padx=0, pady=0, text="grav const", command=self.updategravconstant)
-        self.gravEntryButton.place(x=400, y=self.height-36)
-        self.gravEntry.bind("<Return>", lambda e: self.updategravconstant())
-
-        self.stateLabelCheck = Checkbutton(self, text="State Labels", command=self.toggleStateLabels)
-        self.stateLabelCheck.place(x=self.width-100, y=10)
-        if self.stateLabels:
-            self.stateLabelCheck.select()
-
-        self.edgeLabelCheck = Checkbutton(self, text="Edge Labels", command=self.toggleEdgeLabels)
-        self.edgeLabelCheck.place(x=self.width-200, y=10)
-        if self.edgeLabels:
-            self.edgeLabelCheck.select()
+        self.springscale = Scale(self, from_=20, to=500, orient="horizontal", label="spring radius", command=self.update_spring_dist)
+        self.springscale.set(self.natural_spring)
+        self.springscale.place(x=10, y=self.height-70)
 
 
-        self.minButton = Button(self, text="Minimise", font=bFont, padx=0, pady=0, command=lambda: self.modActiveMachine("minimise"))
-        self.minButton.place(x=90, y=10)
+        self.springentry = Entry(self, font=bfont, width=6, justify="right", bg="#eee")
+        self.springentry.place(x=235, y=self.height-36)
+        self.springentry.insert(0, str(self.spring_const))
+        self.springentry_button = Button(self, font=bfont, padx=0, pady=0, text="spr const", command=self.update_spring_const)
+        self.springentry_button.place(x=285, y=self.height-36)
+        self.springentry.bind("<Return>", lambda e: self.update_spring_const())
 
-        self.compButton = Button(self, text="Complement", font=bFont, padx=0, pady=0, command=lambda: self.modActiveMachine("complement"))
-        self.compButton.place(x=160, y=10)
+        self.graventry = Entry(self, font=bfont, width=6, justify="right", bg="#eee")
+        self.graventry.place(x=350, y=self.height-36)
+        self.graventry.insert(0, str(self.grav_const))
+        self.graventry_button = Button(self, font=bfont, padx=0, pady=0, text="grav const", command=self.update_grav_const)
+        self.graventry_button.place(x=400, y=self.height-36)
+        self.graventry.bind("<Return>", lambda e: self.update_grav_const())
 
-        self.revButton = Button(self, text="Reverse", font=bFont, padx=0, pady=0, command=lambda: self.modActiveMachine("reverse"))
-        self.revButton.place(x=250, y=10)
+        self.statelabel_check = Checkbutton(self, text="State Labels", command=self.toggle_state_labels)
+        self.statelabel_check.place(x=self.width-100, y=10)
+        if self.state_labels:
+            self.statelabel_check.select()
 
-        self.starButton = Button(self, text="Star", font=bFont, padx=0, pady=0, command=lambda: self.modActiveMachine("star"))
-        self.starButton.place(x=310, y=10)
-
-        self.renameButton = Button(self, text="Redesignate", font=bFont, padx=0, pady=0, command=lambda: self.modActiveMachine("rename"))
-        self.renameButton.place(x=350, y=10)
-
-        self.describeButton = Button(self, text="Describe", font=bFont, padx=0, pady=0, command=self.describeActiveMachine)
-        self.describeButton.place(x=435, y=10)
-
-        self.quitButton = Button(self, text="Quit", font=bFont, padx=0, pady=0, command=self.parent.destroy)
-        self.quitButton.place(x=self.width-45, y=self.height-106)
-
-
-        self.fileEntry = Entry(self, font=bFont, bg="#eee")
-        self.fileEntry.place(x=self.width-155, y=self.height-70)
-        self.fileEntryButton = Button(self, text="Load File", font=bFont, padx=0, pady=0, command=lambda: self.modActiveMachine("load"))
-        self.fileEntryButton.place(x=self.width-220, y=self.height-70)
-        self.fileEntry.bind("<Return>", lambda e: self.modActiveMachine("load"))
+        self.edgelabel_check = Checkbutton(self, text="Edge Labels", command=self.toggle_edge_labels)
+        self.edgelabel_check.place(x=self.width-200, y=10)
+        if self.edge_labels:
+            self.edgelabel_check.select()
 
 
-        self.checkEntry = Entry(self, font=bFont, bg="#eee")
-        self.checkEntry.place(x=self.width-155, y=self.height-36)
-        self.checkEntryButton = Button(self, text="Check String", font=bFont, padx=0, pady=0, command=self.checkActiveMachine)
-        self.checkEntryButton.place(x=self.width-243, y=self.height-36)
-        self.checkEntry.bind("<Return>", lambda e: self.checkActiveMachine())
+        self.minbutton = Button(self, text="Minimise", font=bfont, padx=0, pady=0, command=lambda: self.mod_active_machine("minimise"))
+        self.minbutton.place(x=90, y=10)
 
-        self.deleteRectangle = self.canvas.create_rectangle([10, 40, 70, 100], fill="#ddd", tag="delete")
-        self.deleteText = self.canvas.create_text([15, 45], anchor='nw', text="Delete\nNode", font=bFont, width=50, tag="delete")
+        self.compbutton = Button(self, text="Complement", font=bfont, padx=0, pady=0, command=lambda: self.mod_active_machine("complement"))
+        self.compbutton.place(x=160, y=10)
+
+        self.revbutton = Button(self, text="Reverse", font=bfont, padx=0, pady=0, command=lambda: self.mod_active_machine("reverse"))
+        self.revbutton.place(x=250, y=10)
+
+        self.starbutton = Button(self, text="Star", font=bfont, padx=0, pady=0, command=lambda: self.mod_active_machine("star"))
+        self.starbutton.place(x=310, y=10)
+
+        self.renamebutton = Button(self, text="Redesignate", font=bfont, padx=0, pady=0, command=lambda: self.mod_active_machine("rename"))
+        self.renamebutton.place(x=350, y=10)
+
+        self.describebutton = Button(self, text="Describe", font=bfont, padx=0, pady=0, command=self.describe_active_machine)
+        self.describebutton.place(x=435, y=10)
+
+        self.quitbutton = Button(self, text="Quit", font=bfont, padx=0, pady=0, command=self.parent.destroy)
+        self.quitbutton.place(x=self.width-45, y=self.height-106)
+
+
+        self.file_entry = Entry(self, font=bfont, bg="#eee")
+        self.file_entry.place(x=self.width-155, y=self.height-70)
+        self.file_entry_button = Button(self, text="Load File", font=bfont, padx=0, pady=0, command=lambda: self.mod_active_machine("load"))
+        self.file_entry_button.place(x=self.width-220, y=self.height-70)
+        self.file_entry.bind("<Return>", lambda e: self.mod_active_machine("load"))
+
+
+        self.checkentry = Entry(self, font=bfont, bg="#eee")
+        self.checkentry.place(x=self.width-155, y=self.height-36)
+        self.checkentry_button = Button(self, text="Check String", font=bfont, padx=0, pady=0, command=self.check_active_machine)
+        self.checkentry_button.place(x=self.width-243, y=self.height-36)
+        self.checkentry.bind("<Return>", lambda e: self.check_active_machine())
+
+        self.delete_rectangle = self.canvas.create_rectangle([10, 40, 70, 100], fill="#ddd", tag="delete")
+        self.delete_text = self.canvas.create_text([15, 45], anchor='nw', text="Delete\nNode", font=bfont, width=50, tag="delete")
 
         self.canvas.pack(fill=BOTH, expand=1)
 
 
-def drawDFA(machine, rename=True, grav=280, spring=100, eLabels=True, sLabels=False):
+def draw_dfa(machine, rename=True, grav=280, spring=100, eLabels=True, sLabels=False):
     """ Draws and anneals the given machine. """
     root = Tk()
-    win = FAContext(root, 800, 600, machine, renameStates=rename, gravdist=grav, springdist=spring, edgeLabels=eLabels, stateLabels=sLabels)
+    win = FAContext(root, 800, 600, machine, rename_states=rename, gravdist=grav, springdist=spring, edge_labels=eLabels, state_labels=sLabels)
     root.mainloop()
 
 
 ###    RUNTIME THINGS    ##########################################################
 
-def defaultMachine(s):
+def default_machine(s):
     """ Checks a string on the machine accepting input of length 3, or which does not contain the substring '101' """
 
     # We could build the machine from scratch if we wished, in this way:
     # Assuming L1.dfa and L4.dfa exist, with the correct contents.
-    # union(loadFA("L1.dfa"), loadFA("L2.dfa")).checkString(s)
+    # union(load_fa("L1.dfa"), load_fa("L2.dfa")).check_string(s)
 
     description = ("A,C,F,J,N,gamma,alpha,beta\n"  # States
                    "0,1\n"                         # Alphabet
@@ -1605,7 +1605,7 @@ def defaultMachine(s):
                    "beta,alpha\n"                  # alpha
                    "gamma,N\n")                    # beta
 
-    parseDFA(description).checkString(s)
+    parse_dfa(description).check_string(s)
 
 
 def demo():
@@ -1613,7 +1613,7 @@ def demo():
 
     print("NFA Parsing\n-----------\n")
 
-    abcString = (
+    abc_string = (
         "S,A,B,C\n"
         "a,b,c\n"
         "S\n"
@@ -1623,30 +1623,30 @@ def demo():
         "{},{},{C},{}\n"
         "{},{},{},{}\n")
 
-    abc = parseNFA(abcString)
+    abc = parse_nfa(abc_string)
 
-    print("An NFA accepting 'abc': \n" + abcString + "\nOn 'abc':")
-    abc.toDFA().checkString("abc")
+    print("An NFA accepting 'abc': \n" + abc_string + "\nOn 'abc':")
+    abc.dfa().check_string("abc")
     print("\nOn 'cba':")
-    abc.toDFA().checkString("cba")
+    abc.dfa().check_string("cba")
 
 
 
     print("\n\n\nExtra-Alphabetic Symbol Handling\n--------------------------------\n")
     print("The previous machine is defined only on [abc], but dynamically transitions to an error state for other input.\n")
 
-    abc.toDFA().checkString("abFabc")
+    abc.dfa().check_string("abFabc")
 
 
 
     print("\n\n\nNFA <-> DFA Conversion\n----------------------\n")
     print("If we convert the previous NFA to a DFA, we get the following description:\n")
-    abc.toDFA().describe()
+    abc.dfa().describe()
     print("\nWhere '()' has been substituted for the empty set.\n")
 
     print("If we define a DFA, for example:\n")
 
-    dfa1String = (
+    dfa1_string = (
         "A,B,C\n"
         "s,t\n"
         "A\n"
@@ -1655,17 +1655,17 @@ def demo():
         "C,A\n"
         "C,B\n")
 
-    dfa1 = parseDFA(dfa1String)
+    dfa1 = parse_dfa(dfa1_string)
 
-    print(dfa1String + "\nWe can represent this in the NFA format as well:\n")
+    print(dfa1_string + "\nWe can represent this in the NFA format as well:\n")
 
-    dfa1.toNFA().describe()
+    dfa1.nfa().describe()
 
 
     print("\n\n\nDFA Minimisation\n----------------\n")
     print("Let us define a relatively large NFA. The following represents L1 U L2 from Task 1:\n")
 
-    t1String = ("S,L11,L12,L13,L21,L22,L23,L24,U\n"
+    t1_string = ("S,L11,L12,L13,L21,L22,L23,L24,U\n"
                 "0,1\n"
                 "S\n"
                 "L11,L12,L13,L24\n"
@@ -1679,11 +1679,11 @@ def demo():
                 "{U},{U},{}\n"
                 "{U},{U},{}\n")
 
-    t1 = parseNFA(t1String)
+    t1 = parse_nfa(t1_string)
 
-    print(t1String + "\nWe may convert this to a DFA, yielding:\n")
+    print(t1_string + "\nWe may convert this to a DFA, yielding:\n")
 
-    t2 = t1.toDFA()
+    t2 = t1.dfa()
 
     t2.describe()
 
@@ -1694,14 +1694,14 @@ def demo():
 
     print("\nOr, with the states renamed,\n")
 
-    t3.renameStates()
+    t3.rename_states()
     t3.describe()
 
     print("\nHence, we can check strings against the NFA by using the equivalent DFA:\n")
 
-    t3.checkString("101")
+    t3.check_string("101")
     print()
-    t3.checkString("1010")
+    t3.check_string("1010")
 
 
 
@@ -1711,7 +1711,7 @@ def demo():
     print("For example, here are the descriptions of two DFAs on different alphabets:\n")
 
 
-    numString = ("1,2,3,4\n"
+    num_string = ("1,2,3,4\n"
                 "0,1\n"
                 "1\n"
                 "1,2,3\n"
@@ -1720,7 +1720,7 @@ def demo():
                 "1,4\n"
                 "4,4\n")
 
-    alphanumString = (
+    alphanum_string = (
         "A,B,C\n"
         "a,b,0\n"
         "A\n"
@@ -1729,11 +1729,11 @@ def demo():
         "C,A,C\n"
         "C,B,A\n")
 
-    numerical = parseDFA(numString)
-    alphanumerical = parseDFA(alphanumString)
+    numerical = parse_dfa(num_string)
+    alphanumerical = parse_dfa(alphanum_string)
 
-    print(numString)
-    print(alphanumString)
+    print(num_string)
+    print(alphanum_string)
 
     print("And their union is:\n")
 
@@ -1749,7 +1749,7 @@ def demo():
     print("We already have the one for 'abc'. 'cba' is 'abc' reversed, and 'abc01ccc' may be obtained by concatenation.")
     print("So we only need machines for '01' and 'ccc', which are:\n")
 
-    ohOneString = ("S,O,F\n"
+    oh_one_string = ("S,O,F\n"
                    "0,1\n"
                    "S\n"
                    "F\n"
@@ -1757,7 +1757,7 @@ def demo():
                    "{},{F},{}\n"
                    "{},{},{}\n")
 
-    cccString = ("C1,C2,C3,C4\n"
+    ccc_string = ("C1,C2,C3,C4\n"
                  "c\n"
                  "C1\n"
                  "C4\n"
@@ -1766,19 +1766,19 @@ def demo():
                  "{C4},{}\n"
                  "{},{}\n")
 
-    print(ohOneString + "\n")
-    print(cccString +"\n")
+    print(oh_one_string + "\n")
+    print(ccc_string +"\n")
 
-    ohOne = parseNFA(ohOneString).toDFA().minimised()
-    ccc = parseNFA(cccString).toDFA().minimised()
+    oh_one = parse_nfa(oh_one_string).dfa().minimised()
+    ccc = parse_nfa(ccc_string).dfa().minimised()
 
     print("The machine for the regex looks like this:\n")
 
-    regex = intersection(concatenation(abc, concatenation(star(union(reversal(abc), ohOne)), ccc)), complement(concatenation(concatenation(abc, ohOne), ccc)))
+    regex = intersection(concatenation(abc, concatenation(star(union(reversal(abc), oh_one)), ccc)), complement(concatenation(concatenation(abc, oh_one), ccc)))
     regex.describe()
 
     print("\nOr, renamed:\n")
-    regex.renameStates()
+    regex.rename_states()
     regex.describe()
 
 
@@ -1804,8 +1804,8 @@ def demo():
           "3,2,1\n"
           "1,2,1\n")
 
-    a1 = parseDFA(a1s)
-    a2 = parseDFA(a2s)
+    a1 = parse_dfa(a1s)
+    a2 = parse_dfa(a2s)
 
     equivalent(a1, a2, True)
 
@@ -1814,7 +1814,7 @@ def demo():
     print("In a similar vein, we can find the shortest string that will transition between any two states in a machine.")
     print("In particular, it's useful for finding an example string which is accepted by a machine, if such a string exists.")
     print("For example, the above regex machine accepts the string '", end="")
-    print(findAcceptedString(regex) + "'.")
+    print(find_accepted_string(regex) + "'.")
 
 
 
@@ -1827,8 +1827,8 @@ def demo():
     print("Be careful with the star and reversal operations on large machines.\nSee the source for more exhaustive notes.\n")
     print("-|-\n/ \\\n")
 
-    drawDFA(t2, rename=False, sLabels=True)
-    drawDFA(abc)
+    draw_dfa(t2, rename=False, sLabels=True)
+    draw_dfa(abc)
 
     florette = ("""O,A,B,C,D,E,AL,AR,AC,BL,BR,BC,CL,CR,CC,DL,DR,DC,EL,ER,EC
                 ;,:,',",.   
@@ -1862,36 +1862,36 @@ def demo():
         for dest in state.transitions.values():
             counts[dest] += 1
     maximum = max(counts.values())
-    maxIncoming = [n for n in counts if counts[n] == maximum][0]
-    regex.removestate(maxIncoming)
+    max_incoming = [n for n in counts if counts[n] == maximum][0]
+    regex.remove_state(max_incoming)
 
     # Other examples
-    #drawDFA(parseDFA(florette), rename=False, spring=20, grav=220, eLabels=False)
-    #drawDFA(regex, rename=False)
-    #drawDFA(u)
+    #draw_dfa(parse_dfa(florette), rename=False, spring=20, grav=220, eLabels=False)
+    #draw_dfa(regex, rename=False)
+    #draw_dfa(u)
 
 
 if __name__ == '__main__':
     if len(sys.argv) >= 3:
         if sys.argv[1] == "--draw":
-            drawDFA(loadFA(sys.argv[2]), rename=False)
+            draw_dfa(load_fa(sys.argv[2]), rename=False)
         elif len(sys.argv) == 4:
             if sys.argv[1] == "--union":
-                drawDFA(union(loadFA(sys.argv[2]), loadFA(sys.argv[3])))
+                draw_dfa(union(load_fa(sys.argv[2]), load_fa(sys.argv[3])))
             elif sys.argv[1] == "--concat":
-                drawDFA(concatenation(loadFA(sys.argv[2]), loadFA(sys.argv[3])))
+                draw_dfa(concatenation(load_fa(sys.argv[2]), load_fa(sys.argv[3])))
             elif sys.argv[1] == "--intersect":
-                drawDFA(intersection(loadFA(sys.argv[2]), loadFA(sys.argv[3])))
+                draw_dfa(intersection(load_fa(sys.argv[2]), load_fa(sys.argv[3])))
             else:
-                loadFA(sys.argv[2]).checkString(sys.argv[1])
+                load_fa(sys.argv[2]).check_string(sys.argv[1])
         else:
-            loadFA(sys.argv[2]).checkString(sys.argv[1])
+            load_fa(sys.argv[2]).check_string(sys.argv[1])
     elif len(sys.argv) == 2:
         if sys.argv[1] == "--demo":
             demo()
         elif sys.argv[1] == "--draw":
-            drawDFA(parseDFA(".\n\n.\n\n\n"))
+            draw_dfa(parse_dfa(".\n\n.\n\n\n"))
         else:
-            defaultMachine(sys.argv[1])
+            default_machine(sys.argv[1])
     else:
         print("rejected")

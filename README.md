@@ -17,13 +17,9 @@ Available features include:
 
 Call demo() for a whirlwind tour of most of the major features.
 
-Be aware that this was written first in Python 3 and then converted rather hackily down to 2.7.
-There may be some unexpected breakage.
-
 To-Do
 =====
 
-* Convert back to Python 3
 * Merge DFAs and NFAs
 * Better, more modular graphics
 * Interactive binary graph operations
