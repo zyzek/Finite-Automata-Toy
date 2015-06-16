@@ -35,16 +35,14 @@ Invocation
 
 Program can be run with the following arguments:
 
---demo              | Calls demo()
---draw              | Launches the graph visualiser without loading a graph into it.
---draw filename     | Draws the DFA from an external file with a DFA or NFA in it
-
-<string>            | checks <string> against a default DFA
-<string> filename   | checks <string> against a DFA or NFA described in filename
-
---concat f1 f2      | Draws the graph of the concatenated machines described in f1 and f2
---union f1 f2       | Draws the graph of the union of the machines described in f1 and f2
---intersect f1 f2   | Draws the graph of the intersected machines described in f1 and f2
+    --demo              | Calls demo()
+    --draw              | Launches the graph visualiser without loading a graph into it.
+    --draw filename     | Draws the DFA from an external file with a DFA or NFA in it
+    <string>            | checks <string> against a default DFA
+    <string> filename   | checks <string> against a DFA or NFA described in filename
+    --concat f1 f2      | Draws the graph of the concatenated machines described in f1 and f2
+    --union f1 f2       | Draws the graph of the union of the machines described in f1 and f2
+    --intersect f1 f2   | Draws the graph of the intersected machines described in f1 and f2
 
 Graph Visualiser
 ================
