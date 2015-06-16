@@ -3,25 +3,32 @@ A small program for manipulating and visualising finite automata.
 
 Contains functionality for running, manipulating, and viewing Finite Automata.
 Available features include:
-    * Reading in DFA, NFA from external files;
-    * Checking whether a certain string is accepted by a given DFA, NFA;
-    * Graceful handling of input symbols not in a machine's alphabet.
-    * NFA <-> DFA conversion; in particular, NFA are run by deriving a DFA;
-    * DFA minimisation;
-    * Language operations include Union, Complement, Intersection,
-      Star Closure, Concatenation, and Reversal;
-    * Determination of equality between machines;
-    * Identification of the empty and universally accepting machines;
-    * Production of example strings accepted by a machine,
-      and of the shortest string between two states;
-    * Text description of DFA/NFA in the same format as in the external files
-    * Interactive graph visualisation
+* Reading in DFA, NFA from external files;
+* Checking whether a certain string is accepted by a given DFA, NFA;
+* Graceful handling of input symbols not in a machine's alphabet.
+* NFA <-> DFA conversion; in particular, NFA are run by deriving a DFA;
+* DFA minimisation;
+* Language operations include Union, Complement, Intersection, Star Closure, Concatenation, and Reversal;
+* Determination of equality between machines;
+* Identification of the empty and universally accepting machines;
+* Production of example strings accepted by a machine, and of the shortest string between two states;
+* Text description of DFA/NFA in the same format as in the external files
+* Interactive graph visualisation
 
 Call demo() for a whirlwind tour of most of the major features.
 
-Be aware that this was written first in Python 3.
+Be aware that this was written first in Python 3 and then converted rather hackily down to 2.7.
 There may be some unexpected breakage.
 
+To-Do
+=====
+
+* Convert back to Python 3
+* Merge DFAs and NFAs
+* Better, more modular graphics
+* Interactive binary graph operations
+* Visualisation of string checking
+* Better physics for the graph drawing
 
 Invocation
 ==========
